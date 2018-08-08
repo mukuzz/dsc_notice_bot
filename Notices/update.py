@@ -2,19 +2,29 @@ from .models import Notice
 import requests
 import re
 from bs4 import BeautifulSoup
+from background_task import background
 
 SOURCE_URL = 'http://dsc.du.ac.in/'
 NOTICES_URL = SOURCE_URL+'AllNewsDetails.aspx'
 
+
+@background(schedule=60)
 def update_db():
+	print("Running Now")
+	latest_key = 0
+	all_objects = Notice.objects.order_by('-key')
+	if len(all_objects) is not 0:
+		latest_object = all_objects[0]
+		latest_key = latest_object.getKey()
+
 	all_notices = get_notices()
 
 	if len(all_notices) is not 0:
-		Notice.objects.all().delete()
 		
 		bulk_objects = [
 			Notice( title=notice['title'],key=notice['key'],content=notice['link'] )
 			for notice in all_notices
+			if notice['key'] > latest_key
 		]
 
 		Notice.objects.bulk_create(bulk_objects)
