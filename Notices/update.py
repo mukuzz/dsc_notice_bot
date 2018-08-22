@@ -3,6 +3,7 @@ import requests
 import re
 from bs4 import BeautifulSoup
 from background_task import background
+import datetime
 
 SOURCE_URL = 'http://dsc.du.ac.in/'
 NOTICES_URL = SOURCE_URL+'AllNewsDetails.aspx'
@@ -10,7 +11,8 @@ NOTICES_URL = SOURCE_URL+'AllNewsDetails.aspx'
 
 @background(schedule=60)
 def update_db():
-	print("Running Now")
+	date = datetime.datetime.now()
+	print(date)
 	latest_key = 0
 	all_objects = Notice.objects.order_by('-key')
 	if len(all_objects) is not 0:
@@ -26,8 +28,11 @@ def update_db():
 			for notice in all_notices
 			if notice['key'] > latest_key
 		]
+		print(len(bulk_objects) + " Notices Added")
 
 		Notice.objects.bulk_create(bulk_objects)
+
+		notify_users()
 
 
 def get_notices():
@@ -50,3 +55,6 @@ def get_notices():
 			unique_list.append(key)
 	return data
 
+
+def notify_users():
+	pass
