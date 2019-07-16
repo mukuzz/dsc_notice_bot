@@ -5,7 +5,8 @@ from django.db import models
 class Notice(models.Model):
 	title = models.CharField(max_length=200)
 	key = models.IntegerField(default=0)
-	content = models.CharField(max_length=200) # Website Address
+	content = models.TextField()
+	url = models.CharField(max_length=200) # Source Address
 
 	def __str__(self):
 		return self.title
