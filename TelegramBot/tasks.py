@@ -21,7 +21,7 @@ def sendNewNoticesToChannel(new_notice_count):
     new_notices = Notice.objects.filter(key__gte=min_key)
 
     response_codes = []
-    for notice in reversed(new_notices):
+    for notice in new_notices:
       chat_text = notice.content
       response = requests.get(
         f'https://api.telegram.org/bot{token}/sendMessage',

@@ -21,23 +21,25 @@ def update_db():
 	
 	# print("Fetching New Notices")
 	new_notices = getNewNotices(latest_key)
-
+	new_notices = new_notices[-10:]
+	
 	if len(new_notices) is not 0:
 		# Get notice content
-		for notice in new_notices:
+		for notice in reversed(new_notices):
 			try:
 				notice_content = getNoticeContent(notice)
-			except Exception:
+			except Exception as e:
 				notice_content = ""
-				raise
-			header = f"<strong>{notice['title']}</strong>"
-			footer = f"\n\n<i>Source:</i> <a href='{notice['link']}'>{notice['link']}</a>"
-			notice_content = header + notice_content + footer
-			b = Notice( title=notice['title'],key=notice['key'],content=notice_content, url=notice['link'] )
-			b.save()
-			# print("Notice " + str(notice['key'])+ " added")
+				print(repr(e))
+			finally:
+				header = f"<strong>{notice['title']}</strong>"
+				footer = f"\n\n<i>Source:</i> <a href='{notice['link']}'>{notice['link']}</a>"
+				notice_content = header + notice_content + footer
+				b = Notice( title=notice['title'],key=notice['key'],content=notice_content, url=notice['link'] )
+				b.save()
+				# print("Notice " + str(notice['key'])+ " added")
 		# print(str(len(new_notices))+ " Notices Added")
-		return [ notice['key'] for notice in new_notices ]
+		return [ notice['key'] for notice in reversed(new_notices) ]
 	else:
 		# print("No New Notices")
 		return []
