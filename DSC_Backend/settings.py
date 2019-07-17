@@ -11,7 +11,11 @@ https://docs.djangoproject.com/en/2.0/ref/settings/
 """
 
 import os
+from configparser import RawConfigParser
 from celery import signature
+
+config = RawConfigParser()
+config.read('/opt/DSC_Backend/config.ini')
 
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -21,7 +25,7 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 # See https://docs.djangoproject.com/en/2.0/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = '7nqriw8-bppwfj%01x&576mhdltef7@dg*ej=@rr$7babyaq2+'
+SECRET_KEY = config.get('secrets', 'SECRET_KEY')
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
@@ -126,6 +130,11 @@ USE_TZ = True
 STATIC_URL = '/static/'
 
 
+# Telegram Channel Settings
+TELEGRAM_BOT_TOKEN = config.get('telegram', 'CHANNEL_TOKEN')
+TELEGRAM_TARGET_CHANNEL = config.get('telegram', 'TARGET_CHANNEL')
+
+
 # Celery application definition
 CELERY_BROKER_URL = 'redis://localhost:6379'
 CELERY_RESULT_BACKEND = 'redis://localhost:6379'
@@ -135,7 +144,7 @@ CELERY_TASK_SERIALIZER = 'json'
 CELERY_BEAT_SCHEDULE = {
     "update_notices_and_send_new_to_telegram_channel": {
         "task": "Notices.tasks.update_db",
-        "schedule": 60.0,
+        "schedule": 600.0,
         "options": {
             "link": signature("TelegramBot.tasks.sendNewNoticesToChannel")
         }

@@ -3,10 +3,12 @@ from .models import BotUser
 from Notices.models import Notice
 from Notices.tasks import update_db
 import requests
+from django.conf import settings
 
 app = Celery()
 
-TELEGRAM_TARGET_CHANNEL = '@testchannel84'
+target = settings.TELEGRAM_TARGET_CHANNEL
+token = settings.TELEGRAM_BOT_TOKEN
 
 @app.task
 def sendNewNoticesToChannel(new_notice_count):
@@ -21,11 +23,10 @@ def sendNewNoticesToChannel(new_notice_count):
     response_codes = []
     for notice in reversed(new_notices):
       chat_text = notice.content
-      token = '837310065:AAGg76UAP8bR9NQrpJRscaSKqeFaqP1Dr4Q'
       response = requests.get(
         f'https://api.telegram.org/bot{token}/sendMessage',
         params = {
-          'chat_id': TELEGRAM_TARGET_CHANNEL,
+          'chat_id': target,
           'text': chat_text,
           'parse_mode': 'html',
           'disable_web_page_preview': 'true'
