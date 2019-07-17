@@ -2,22 +2,24 @@ from .models import Notice
 import requests
 import re
 import bs4
-from background_task import background
-import datetime
+from celery import Celery
 
 SOURCE_URL = 'http://dsc.du.ac.in/'
 NOTICES_URL = SOURCE_URL + 'AllNewsDetails.aspx'
 
+app = Celery()
 
-@background(schedule=60)
+@app.task
 def update_db():
+	""""Update databse with new Notices from the College website
+	and return the key of the updated notices"""
 	latest_key = 0
 	all_objects = Notice.objects.order_by('-key')
 	if len(all_objects) is not 0:
 		latest_object = all_objects[0]
-		latest_key = latest_object.getKey()
+		latest_key = latest_object.key
 	
-	print(str(datetime.datetime.now()) + " Fetching New Notices")
+	# print("Fetching New Notices")
 	new_notices = getNewNotices(latest_key)
 
 	if len(new_notices) is not 0:
@@ -33,10 +35,12 @@ def update_db():
 			notice_content = header + notice_content + footer
 			b = Notice( title=notice['title'],key=notice['key'],content=notice_content, url=notice['link'] )
 			b.save()
-			print(str(datetime.datetime.now()) + " Notice " + str(notice['key'])+ " added")
-		print(str(datetime.datetime.now()) + " " + str(len(new_notices))+ " Notices Added")
+			# print("Notice " + str(notice['key'])+ " added")
+		# print(str(len(new_notices))+ " Notices Added")
+		return [ notice['key'] for notice in new_notices ]
 	else:
-		print(str(datetime.datetime.now()) + " No New Notices")
+		# print("No New Notices")
+		return []
 
 
 def getNewNotices(latest_key):
@@ -92,3 +96,4 @@ def cleanContent(soup):
 			if line.getText() is not None and line.getText().strip() != "":
 				content += "\n\n" + line.getText().strip()
 	return content
+

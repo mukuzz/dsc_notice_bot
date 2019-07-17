@@ -10,6 +10,3 @@ class Notice(models.Model):
 
 	def __str__(self):
 		return self.title
-
-	def getKey(self):
-		return self.key
