@@ -131,7 +131,7 @@ STATIC_URL = '/static/'
 
 
 # Telegram Channel Settings
-TELEGRAM_BOT_TOKEN = config.get('telegram', 'CHANNEL_TOKEN')
+TELEGRAM_BOT_TOKEN = config.get('telegram', 'BOT_TOKEN')
 TELEGRAM_TARGET_CHANNEL = config.get('telegram', 'TARGET_CHANNEL')
 
 
