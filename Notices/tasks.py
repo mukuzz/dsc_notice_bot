@@ -2,47 +2,68 @@ from .models import Notice
 import requests
 import re
 import bs4
-from celery import Celery
+from celery import task
+from celery.utils.log import get_task_logger
+import redis
 
 SOURCE_URL = 'http://dsc.du.ac.in/'
 NOTICES_URL = SOURCE_URL + 'AllNewsDetails.aspx'
 
-app = Celery()
+LOCK_EXPIRE = 60 * 10  # Lock expires in 10 minutes
+REDIS_CLIENT = redis.Redis()
+key = 'update_notices'
 
-@app.task
+logger = get_task_logger(__name__)
+
+
+@task
 def update_db():
 	""""Update databse with new Notices from the College website
 	and return the key of the updated notices"""
-	latest_key = 0
-	all_objects = Notice.objects.order_by('-key')
-	if len(all_objects) is not 0:
-		latest_object = all_objects[0]
-		latest_key = latest_object.key
-	
-	# print("Fetching New Notices")
-	new_notices = getNewNotices(latest_key)
-	new_notices = new_notices[-10:]
-	
-	if len(new_notices) is not 0:
-		# Get notice content
-		for notice in reversed(new_notices):
-			try:
-				notice_content = getNoticeContent(notice)
-			except Exception as e:
-				notice_content = ""
-				print(repr(e))
-			finally:
-				header = f"<strong>{notice['title']}</strong>"
-				footer = f"\n\n<i>Source:</i> <a href='{notice['link']}'>{notice['link']}</a>"
-				notice_content = header + notice_content + footer
-				b = Notice( title=notice['title'],key=notice['key'],content=notice_content, url=notice['link'] )
-				b.save()
-				# print("Notice " + str(notice['key'])+ " added")
-		# print(str(len(new_notices))+ " Notices Added")
-		return [ notice['key'] for notice in reversed(new_notices) ]
-	else:
-		# print("No New Notices")
-		return []
+
+	lock = REDIS_CLIENT.lock(key, timeout=LOCK_EXPIRE)
+	try:
+		have_lock = lock.acquire(blocking=False)
+		if have_lock:
+			# Run the task as no other instance running
+			
+			latest_key = 0
+			all_objects = Notice.objects.order_by('-key')
+			if len(all_objects) is not 0:
+				latest_object = all_objects[0]
+				latest_key = latest_object.key
+
+			logger.debug("Fetching New Notices")
+			new_notices = getNewNotices(latest_key)
+			new_notices = new_notices[-10:]
+
+			if len(new_notices) is not 0:
+				# Get notice content
+				for notice in reversed(new_notices):
+					try:
+						notice_content = getNoticeContent(notice)
+					except Exception as e:
+						notice_content = ""
+						print(repr(e))
+					finally:
+						header = f"<strong>{notice['title']}</strong>"
+						footer = f"\n\n<i>Source:</i> <a href='{notice['link']}'>{notice['link']}</a>"
+						notice_content = header + notice_content + footer
+						b = Notice( title=notice['title'],key=notice['key'],content=notice_content, url=notice['link'] )
+						b.save()
+						logger.debug("Notice " + str(notice['key'])+ " added")
+				logger.debug(str(len(new_notices))+ " Notices Added")
+				return [ notice['key'] for notice in reversed(new_notices) ]
+			else:
+				logger.debug("No New Notices")
+				return []
+		else:
+			logger.info("One instance of task alreday running")
+
+	finally:
+		if have_lock:
+			lock.release()
+	return []
 
 
 def getNewNotices(latest_key):

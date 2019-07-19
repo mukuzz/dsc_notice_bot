@@ -14,31 +14,6 @@ Install non python requirements:
 
     sudo apt install redis-server
 
-Open this file with your preferred text editor:
-
-    sudo nano /etc/redis/redis.conf
-
-Inside the file, find the `supervised` directive. This directive allows us to declare an init system to manage Redis as a service, providing us with more control over its operation. The supervised directive is set to `no` by default. Since we are running Ubuntu, which uses the systemd init system, change this to `systemd`:
-
-    . . .
-
-    # If you run Redis from upstart or systemd, Redis can interact with your
-    # supervision tree. Options:
-    #   supervised no      - no supervision interaction
-    #   supervised upstart - signal upstart by putting Redis into SIGSTOP mode
-    #   supervised systemd - signal systemd by writing READY=1 to $NOTIFY_SOCKET
-    #   supervised auto    - detect upstart or systemd method based on
-    #                        UPSTART_JOB or NOTIFY_SOCKET environment variables
-    # Note: these supervision methods only signal "process is ready."
-    #       They do not enable continuous liveness pings back to your supervisor.
-    supervised systemd
-
-    . . .
-
-Now restart the Redis service to reflect the changes we made to the configuration file:
-
-    sudo systemctl restart redis.service
-
 Create a virtual environment and install python requirements
 
     virtualenv --python=python3 venv # note that python3 is required
@@ -74,4 +49,87 @@ In another new terminal start a celery worker
 
     celery -A DSC_Backend worker -l info
 
+Also make sure that the redis server is running
+
 The server will now start scrapping the [College Website](http://dsc.du.ac.in/AllNewsDetails.aspx) for updates and send message to the specified Telegram Channel
+
+## Developmet
+
+In development we will need to run the redis-server as a daemon. Open this file with your preferred text editor:
+
+    sudo nano /etc/redis/redis.conf
+
+Inside the file, find the `daemonise` directive. We need this directive to have value `yes`
+
+    . . .
+
+    # By default Redis does not run as a daemon. Use 'yes' if you need it.
+    # Note that Redis will write a pid file in /var/run/redis.pid when daemonized.
+    daemonize yes
+
+    . . .
+
+Now restart the Redis service to reflect the changes we made to the configuration file:
+
+    sudo systemctl restart redis.service
+
+# Production Deployment
+
+## Install requirements
+
+    pip install gunicorn
+    sudo apt install supervisor
+
+## Configuration
+
+Open this file with your preferred text editor:
+
+    sudo nano /etc/redis/redis.conf
+
+Inside the file, find the `daemonise` directive. We need this directive to have value `no` as we want to supervise our redis server with superviserd:
+
+    . . .
+
+    # By default Redis does not run as a daemon. Use 'yes' if you need it.
+    # Note that Redis will write a pid file in /var/run/redis.pid when daemonized.
+    daemonize no
+
+    . . .
+
+Now stop the Redis service
+
+    sudo systemctl stop redis.service
+
+Edit `/etc/supervisor/conf.d/DSC_Backend.conf`
+
+    [group:DSC_Backend]
+    programs=gunicorn,redis,celery,celery-beat
+
+    [program:gunicorn]
+    command=/home/mukul/DjangoProjects/pyhton3.6_env/bin/gunicorn --name DSC_Backend --workers 12 --bind 127.0.0.1:8888 --log-level=INFO DSC_Backend.wsgi:application
+    directory=/home/mukul/DjangoProjects/DSC_Backend/
+    autostart=true
+    autorestart=true
+
+    [program:redis]
+    command=redis-server
+
+    [program:celery]
+    command=/home/mukul/DjangoProjects/pyhton3.6_env/bin/celery -A DSC_Backend worker -l info
+    directory=/home/mukul/DjangoProjects/DSC_Backend/
+    autostart=true
+    autorestart=true
+
+    [program:celery-beat]
+    command=/home/mukul/DjangoProjects/pyhton3.6_env/bin/celery -A DSC_Backend beat -l info
+    directory=/home/mukul/DjangoProjects/DSC_Backend/
+    autostart=true
+    autorestart=true
+
+Reload the configuration:
+
+    sudo supervisorctl update
+
+Restart all DSC_Backend services:
+
+    sudo supervisorctl restart videofront:
