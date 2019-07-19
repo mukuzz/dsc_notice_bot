@@ -1,6 +1,12 @@
 from django.db import models
+from Notices.models import Notice
 
 # Create your models here.
+
+class SentNotice(models.Model):
+	key = models.IntegerField()
+	notice = models.ForeignKey(Notice, on_delete=models.CASCADE)
+
 
 class BotUser(models.Model):
 	user_id = models.IntegerField()

@@ -1,7 +1,6 @@
 from celery import Celery
-from .models import BotUser
+from .models import SentNotice
 from Notices.models import Notice
-from Notices.tasks import update_db
 import requests
 from django.conf import settings
 
@@ -11,18 +10,23 @@ target = settings.TELEGRAM_TARGET_CHANNEL
 token = settings.TELEGRAM_BOT_TOKEN
 
 @app.task
-def sendNewNoticesToChannel(new_notice_count):
+def sendNewNoticesToChannel(new_notices):
   # an argument is required for this function
   # to work properly when this task is chained
   # in celery *Celery Shit*
 
-  if len(new_notice_count) > 0:
-    min_key = min(new_notice_count)
-    new_notices = Notice.objects.filter(key__gte=min_key)
+  if len(new_notices) > 0:
+    try:
+      last_sent_notice = SentNotice.objects.order_by('-key')[0:1].get()
+      last_sent_notice_key = last_sent_notice.key
+    except SentNotice.DoesNotExist:
+      last_sent_notice_key = 0
+    # Send the last 10 notices
+    new_notices = Notice.objects.filter(key__gt=last_sent_notice_key).order_by('key')[:10]
 
     response_codes = []
     for notice in new_notices:
-      chat_text = notice.content
+      chat_text = notice.content  
       response = requests.get(
         f'https://api.telegram.org/bot{token}/sendMessage',
         params = {
@@ -33,5 +37,8 @@ def sendNewNoticesToChannel(new_notice_count):
         }
       )
       response_codes.append(response.status_code)
+      if response.status_code == 200:
+        sent_notice = SentNotice(key=notice.key, notice=notice)
+        sent_notice.save()
     return response_codes
 
