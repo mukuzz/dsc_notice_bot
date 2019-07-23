@@ -12,7 +12,7 @@ Clone the repository:
 
 Install non python requirements:
 
-    sudo apt install redis-server
+    sudo apt install redis-server build-essential
 
 Create a virtual environment and install python requirements
 
@@ -24,13 +24,17 @@ Create a virtual environment and install python requirements
 Create the configuration file at `/opt/DSC_Backend/config.ini` and add these configurations to the file:
 
     [secrets]
-    SECRET_KEY: <LONG_UNICODE_STRING>
+    DJANGO_SECRET_KEY: <LONG_UNICODE_STRING>
+    POSTGRESQL_PASSWORD: <LONG_UNICODE_STRING>
 
     [telegram]
     BOT_TOKEN: <TELEGRAM_BOT_TOKEN>
     TARGET_CHANNEL: <TELEGRAM_CHANNEL_ID>
 
 TELEGRAM_CHANNEL_ID should begin with `@`
+
+Configure the postgresql server as shown
+[here](https://www.digitalocean.com/community/tutorials/how-to-use-postgresql-with-your-django-application-on-ubuntu-14-04)
 
 Make Django migrations
 
@@ -53,27 +57,19 @@ Also make sure that the redis server is running
 
 The server will now start scrapping the [College Website](http://dsc.du.ac.in/AllNewsDetails.aspx) for updates and send message to the specified Telegram Channel
 
-## Developmet
-
-In development we will need to run the redis-server as a daemon. Open this file with your preferred text editor:
-
-    sudo nano /etc/redis/redis.conf
-
-Inside the file, find the `daemonise` directive. We need this directive to have value `yes`
-
-    . . .
-
-    # By default Redis does not run as a daemon. Use 'yes' if you need it.
-    # Note that Redis will write a pid file in /var/run/redis.pid when daemonized.
-    daemonize yes
-
-    . . .
-
-Now restart the Redis service to reflect the changes we made to the configuration file:
-
-    sudo systemctl restart redis.service
-
 # Production Deployment
+
+## Directory Structure
+
+    /opt/DSC_Backend/
+        DSC_Backend
+        Notices
+        TelegramBot
+        celerybeat-schedule
+        manage.py
+        venv/bin/
+            celery
+            gunicorn
 
 ## Install requirements
 
@@ -82,49 +78,31 @@ Now restart the Redis service to reflect the changes we made to the configuratio
 
 ## Configuration
 
-Open this file with your preferred text editor:
-
-    sudo nano /etc/redis/redis.conf
-
-Inside the file, find the `daemonise` directive. We need this directive to have value `no` as we want to supervise our redis server with superviserd:
-
-    . . .
-
-    # By default Redis does not run as a daemon. Use 'yes' if you need it.
-    # Note that Redis will write a pid file in /var/run/redis.pid when daemonized.
-    daemonize no
-
-    . . .
-
-Now stop the Redis service
-
-    sudo systemctl stop redis.service
-
 Edit `/etc/supervisor/conf.d/DSC_Backend.conf`
 
     [group:DSC_Backend]
-    programs=gunicorn,redis,celery,celery-beat
+    programs=gunicorn,celery,celery-beat
 
     [program:gunicorn]
-    command=/home/mukul/DjangoProjects/pyhton3.6_env/bin/gunicorn --name DSC_Backend --workers 12 --bind 127.0.0.1:8888 --log-level=INFO DSC_Backend.wsgi:application
-    directory=/home/mukul/DjangoProjects/DSC_Backend/
+    command=/opt/DSC_Backend/venv/bin/gunicorn --name DSC_Backend --workers 1 --bind 0:8000 --log-level=INFO DSC_Backend.wsgi:application
+    directory=/opt/DSC_Backend/
     autostart=true
     autorestart=true
-
-    [program:redis]
-    command=redis-server
+    user=mukul
 
     [program:celery]
-    command=/home/mukul/DjangoProjects/pyhton3.6_env/bin/celery -A DSC_Backend worker -l info
-    directory=/home/mukul/DjangoProjects/DSC_Backend/
+    command=/opt/DSC_Backend/venv/bin/celery -A DSC_Backend worker -l info
+    directory=/opt/DSC_Backend/
     autostart=true
     autorestart=true
+    user=mukul
 
     [program:celery-beat]
-    command=/home/mukul/DjangoProjects/pyhton3.6_env/bin/celery -A DSC_Backend beat -l info
-    directory=/home/mukul/DjangoProjects/DSC_Backend/
+    command=/opt/DSC_Backend/venv/bin/celery -A DSC_Backend beat -l info
+    directory=/opt/DSC_Backend/
     autostart=true
     autorestart=true
+    user=mukul
 
 Reload the configuration:
 
