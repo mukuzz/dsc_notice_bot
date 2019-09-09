@@ -3,6 +3,8 @@ db.sqlite3
 __pycache__/
 *.pyc
 
-# Celery
-celerybeat-schedule
-celerybeat.pid
+.vscode/
+
+.env
+
+env

@@ -4,7 +4,7 @@ from Notices.models import Notice
 # Create your models here.
 
 class SentNotice(models.Model):
-	key = models.IntegerField()
+	key = models.CharField(unique=True, max_length=32)
 	notice = models.ForeignKey(Notice, on_delete=models.CASCADE)
 
 

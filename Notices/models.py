@@ -4,7 +4,7 @@ from django.db import models
 
 class Notice(models.Model):
 	title = models.CharField(max_length=200)
-	key = models.IntegerField(default=0)
+	key = models.CharField(unique=True, max_length=32)
 	content = models.TextField()
 	url = models.CharField(max_length=200) # Source Address
 
