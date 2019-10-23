@@ -4,8 +4,8 @@ import re
 import bs4
 import hashlib
 
-SOURCE_URL = 'https://crclab.wixsite.com/'
-NOTICES_URL = SOURCE_URL + 'dscm/staff-notice'
+SOURCE_URL = 'http://dsc.du.ac.in/'
+NOTICES_URL = SOURCE_URL
 
 
 def update_db():
@@ -37,12 +37,15 @@ def update_db():
 def getNewNotices(used_keys):
 	request = requests.get(NOTICES_URL)
 	soup = bs4.BeautifulSoup(request.text, 'html.parser')
-	data = soup.find('div', id='comp-jyzm44cq')
-	notices = data.find_all('li')
+	data = soup.find_all('marquee')
+	notices = []
+	for d in data:
+		for notice in d.find_all('a'):
+			notices.append(notice)
 	new_notices = []
 	for notice in notices:
 		text = notice.text.strip()
-		url =  notice.find('a').attrs['href']
+		url =  notice.attrs['href']
 		content = f'\n\n<a href="{url}">{url}</a>'
 		key = hashlib.md5(text.encode('utf-8')).hexdigest()
 		if key not in used_keys:

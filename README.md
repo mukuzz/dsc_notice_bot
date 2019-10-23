@@ -2,7 +2,7 @@
 This is the backend for the Dyal Sing College Bot.
 
 # Features
-* Send latest notices (scrapped from [College Website](http://dsc.du.ac.in/AllNewsDetails.aspx)) to [Telegram Channel](https://tlgrm.eu/channels)
+* Send latest notices (scrapped from [College Website](http://dsc.du.ac.in/)) to [Telegram Channel](https://tlgrm.eu/channels)
 
 # Installation
 Clone the repository:
