@@ -45,7 +45,9 @@ def getNewNotices(used_keys):
 	new_notices = []
 	for notice in notices:
 		text = notice.text.strip()
-		url =  SOURCE_URL + notice.attrs['href'][3:]
+		url =  notice.attrs['href']
+		if url[:4] != 'http':
+			url =  SOURCE_URL + notice.attrs['href'][3:]
 		content = f'\n\n<a href="{url}">{url}</a>'
 		key = hashlib.md5(text.encode('utf-8')).hexdigest()
 		if key not in used_keys:
