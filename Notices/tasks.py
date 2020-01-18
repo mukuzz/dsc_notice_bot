@@ -49,7 +49,7 @@ def getNewNotices(used_keys):
 		if url[:4] != 'http':
 			url =  SOURCE_URL + notice.attrs['href'][3:]
 		content = f'\n\n<a href="{url}">{url}</a>'
-		key = hashlib.md5(text.encode('utf-8')).hexdigest()
+		key = hashlib.md5((text+url).encode('utf-8')).hexdigest()
 		if key not in used_keys:
 			new_notices.append({'title': text, 'content':content, 'link': NOTICES_URL, 'key': key})
 	return new_notices
