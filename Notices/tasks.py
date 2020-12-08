@@ -51,5 +51,9 @@ def getNewNotices(used_keys):
 		content = f'\n\n<a href="{url}">{url}</a>'
 		key = hashlib.md5((text+url).encode('utf-8')).hexdigest()
 		if key not in used_keys:
+			request = requests.get(url)
+			contentValid = request.status_code >= 200 and request.status_code < 400
+			if not contentValid:
+				continue
 			new_notices.append({'title': text, 'content':content, 'link': NOTICES_URL, 'key': key})
 	return new_notices
