@@ -19,7 +19,7 @@ def update_db():
 	new_notices = getNewNotices(used_keys)
 	new_notices = new_notices[-10:]
 
-	if len(new_notices) is not 0:
+	if len(new_notices) != 0:
 		# Get notice content
 		for notice in reversed(new_notices):
 			header = f"<strong>{notice['title']}</strong>"
