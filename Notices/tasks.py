@@ -3,6 +3,7 @@ import requests
 import re
 import bs4
 import hashlib
+import urllib
 
 SOURCE_URL = 'http://dsc.du.ac.in/'
 NOTICES_URL = SOURCE_URL
@@ -37,7 +38,7 @@ def update_db():
 def getNewNotices(used_keys):
 	request = requests.get(NOTICES_URL)
 	soup = bs4.BeautifulSoup(request.text, 'html.parser')
-	data = soup.find_all('marquee')
+	data = soup.find_all(id='recent-posts-2')
 	notices = []
 	for d in data:
 		for notice in d.find_all('a'):
@@ -45,9 +46,10 @@ def getNewNotices(used_keys):
 	new_notices = []
 	for notice in notices:
 		text = notice.text.strip()
-		url =  notice.attrs['href']
+		url =  urllib.parse.quote(notice.attrs['href'])
 		if url[:4] != 'http':
-			url =  SOURCE_URL + notice.attrs['href'][3:]
+			# url =  SOURCE_URL + url[3:]
+			url =  SOURCE_URL + url[1:]
 		content = f'\n\n<a href="{url}">{url}</a>'
 		key = hashlib.md5((text+url).encode('utf-8')).hexdigest()
 		if key not in used_keys:
