@@ -48,9 +48,9 @@ def getNewNotices(used_keys):
 	for notice in notices:
 		text = notice.text.strip()
 		p_url = urlparse(notice.attrs['href'])
-		url =  urllib.parse.quote(p_url.geturl())
+		p_url = p_url._replace(path=urllib.parse.quote(p_url.path))
+		url =  p_url.geturl()
 		if url[:4] != 'http':
-			# url =  SOURCE_URL + url[3:]
 			url =  SOURCE_URL + url[1:]
 		content = f'\n\n<a href="{url}">{url}</a>'
 		key = hashlib.md5((text+url).encode('utf-8')).hexdigest()
