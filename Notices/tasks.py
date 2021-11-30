@@ -4,6 +4,7 @@ import re
 import bs4
 import hashlib
 import urllib
+from urllib.parse import urlparse
 
 SOURCE_URL = 'http://dsc.du.ac.in/'
 NOTICES_URL = SOURCE_URL
@@ -46,7 +47,8 @@ def getNewNotices(used_keys):
 	new_notices = []
 	for notice in notices:
 		text = notice.text.strip()
-		url =  urllib.parse.quote(notice.attrs['href'])
+		p_url = urlparse(notice.attrs['href'])
+		url =  urllib.parse.quote(p_url.geturl())
 		if url[:4] != 'http':
 			# url =  SOURCE_URL + url[3:]
 			url =  SOURCE_URL + url[1:]
