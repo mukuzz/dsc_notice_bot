@@ -7,7 +7,7 @@ import urllib
 from urllib.parse import urlparse
 
 SOURCE_URL = 'http://dsc.du.ac.in/'
-NOTICES_URL = SOURCE_URL
+NOTICES_URL = SOURCE_URL + 'notices'
 
 
 def update_db():
@@ -39,11 +39,11 @@ def update_db():
 def getNewNotices(used_keys):
 	request = requests.get(NOTICES_URL)
 	soup = bs4.BeautifulSoup(request.text, 'html.parser')
-	data = soup.find_all(id='recent-posts-2')
-	notices = []
-	for d in data:
-		for notice in d.find_all('a'):
-			notices.append(notice)
+	notices = soup.find_all(class_=re.compile('ect-event-url'))
+	# notices = []
+	# for d in data:
+	# 	for notice in d.find_all('a'):
+	# 		notices.append(notice)
 	new_notices = []
 	for notice in notices:
 		text = notice.text.strip()
@@ -59,5 +59,5 @@ def getNewNotices(used_keys):
 			contentValid = request.status_code >= 200 and request.status_code < 400
 			if not contentValid:
 				continue
-			new_notices.append({'title': text, 'content':content, 'link': NOTICES_URL, 'key': key})
+			new_notices.append({'title': text, 'content':content, 'link': SOURCE_URL, 'key': key})
 	return new_notices

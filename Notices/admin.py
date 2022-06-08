@@ -4,8 +4,8 @@ from django.contrib import admin
 from .models import Notice
 
 class NoticeAdmin(admin.ModelAdmin):
-	list_display = ('key','title','url')
-	ordering = ('-key',)
+	list_display = ('date','title','url')
+	ordering = ('-date',)
 	#list_filter = ['pub_date']
 
 admin.site.register(Notice, NoticeAdmin)

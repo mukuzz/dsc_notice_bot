@@ -20,14 +20,15 @@ def sendNewNoticesToChannel(new_notices):
 	new_notices = [notice for notice in Notice.objects.all() if notice.key not in sent_notice_keys]
 	response_codes = []
 	for notice in new_notices:
-		chat_text = notice.content  
+		chat_text = notice.content
 		response = requests.get(
 			f'https://api.telegram.org/bot{token}/sendMessage',
 			params = {
 				'chat_id': target,
 				'text': chat_text,
 				'parse_mode': 'html',
-				'disable_web_page_preview': 'true'
+				# 'disable_notification': 'true',
+				# 'disable_web_page_preview': 'true',
 			}
 		)
 		response_codes.append(response.status_code)
